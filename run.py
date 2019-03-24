@@ -211,6 +211,17 @@ def add_optimization_params(parser):
 
 
 def add_rollout_params(parser):
+    """
+    Adds the parameters for the rollout
+    :param parser: parser object that parses the arguments
+
+    --nsteps_per_seg:
+    --nsegs_per_env:
+    --envs_per_process:
+    --nlumps:
+
+    :return:
+    """
     parser.add_argument('--nsteps_per_seg', type=int, default=128)
     parser.add_argument('--nsegs_per_env', type=int, default=1)
     parser.add_argument('--envs_per_process', type=int, default=128)
