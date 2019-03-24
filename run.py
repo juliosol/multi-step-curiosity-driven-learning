@@ -82,8 +82,8 @@ class Trainer(object):
             nminibatches=hps['nminibatches'],
             lr=hps['lr'],
             cliprange=0.1,
-            nsteps_per_seg=hps['nsteps_per_seg'https://github.com/openai/large-scale-curiosity.git
-            nsegs_per_env=hps['nsegs_per_env'],https://github.com/openai/large-scale-curiosity.git
+            nsteps_per_seg=hps['nsteps_per_seg'],
+            nsegs_per_env=hps['nsegs_per_env'],
             ent_coef=hps['ent_coeff'],
             normrew=hps['norm_rew'],
             normadv=hps['norm_adv'],
@@ -164,9 +164,9 @@ def get_experiment_environment(**args):
 def add_environments_params(parser):
     parser.add_argument('--env', help='environment ID', default='BreakoutNoFrameskip-v4',
                         type=str)
-    parser.add_argument('--max-episode-steps', help='maximhttps://github.com/openai/large-scale-curiosity.gitt=4500, type=int)
-    parser.add_argument('--env_kind', type=str, default="ahttps://github.com/openai/large-scale-curiosity.git
-    parser.add_argument('--noop_max', type=int, default=30https://github.com/openai/large-scale-curiosity.git
+    parser.add_argument('--max-episode-steps', help='maximum number of timesteps for episode', default=4500, type=int)
+    parser.add_argument('--env_kind', type=str, default="atari")
+    parser.add_argument('--noop_max', type=int, default=30)
 
 
 def add_optimization_params(parser):
@@ -183,7 +183,7 @@ def add_optimization_params(parser):
 
 def add_rollout_params(parser):
     parser.add_argument('--nsteps_per_seg', type=int, default=128)
-    parser.add_argument('--nsegs_per_env', type=int, default=1https://github.com/openai/large-scale-curiosity.git
+    parser.add_argument('--nsegs_per_env', type=int, default=1)
     parser.add_argument('--envs_per_process', type=int, default=128)
     parser.add_argument('--nlumps', type=int, default=1)
 
