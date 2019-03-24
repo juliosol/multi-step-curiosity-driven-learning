@@ -13,6 +13,7 @@ from baselines import logger
 from baselines.bench import Monitor
 from baselines.common.atari_wrappers import NoopResetEnv, FrameStack
 from mpi4py import MPI
+import numpy as np
 
 from auxiliary_tasks import FeatureExtractor, InverseDynamics, VAE, JustPixels
 from cnn_policy import CnnPolicy
@@ -64,8 +65,35 @@ class Trainer(object):
                                                         features_shared_with_policy=False,
                                                         feat_dim=512,
                                                         layernormalize=hps['layernorm'])
-        # TODO: output = self.feature_extractor.get_features(tf.random(self.ob_space.shape, reuse=False)
-        # Todo: remake policy and feature extractor
+
+        self.ob_space = self.feature_extractor.get_features(tf.random.uniform(self.ob_space.shape), reuse=False)
+
+        env = self.make_env(0, add_monitor=False)
+        self.ob_mean, self.ob_std = random_agent_ob_mean_std(env, self.feature_extractor)
+
+
+        self.policy = CnnPolicy(
+            scope='pol',
+            ob_space=self.ob_space,
+            ac_space=self.ac_space,
+            hidsize=512,
+            feat_dim=512,
+            ob_mean=self.ob_mean,
+            ob_std=self.ob_std,
+            layernormalize=False,
+            nl=tf.nn.leaky_relu)
+
+        self.feature_extractor = {"none": FeatureExtractor,
+                                  "idf": InverseDynamics,
+                                  "vaesph": partial(VAE, spherical_obs=True),
+                                  "vaenonsph": partial(VAE, spherical_obs=False),
+                                  "pix2pix": JustPixels}[hps['feat_learning']]
+        self.feature_extractor = self.feature_extractor(policy=self.policy,
+                                                        features_shared_with_policy=False,
+                                                        feat_dim=512,
+                                                        layernormalize=hps['layernorm'])
+
+
         self.dynamics = Dynamics if hps['feat_learning'] != 'pix2pix' else UNet
         self.dynamics = self.dynamics(auxiliary_task=self.feature_extractor,
                                       predict_from_pixels=hps['dyn_from_pixels'],

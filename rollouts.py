@@ -84,8 +84,7 @@ class Rollout(object):
 
             sli = slice(l * self.lump_stride, (l + 1) * self.lump_stride)
 
-            # TODO get features for obs
-            # TODO predict = self.dynamics.auxilary_task.get_features()
+            obs = self.dynamics.auxilary_task.get_features(obs, reuse=False)
             acs, vpreds, nlps = self.policy.get_ac_value_nlp(obs)
             self.env_step(l, acs)
 
