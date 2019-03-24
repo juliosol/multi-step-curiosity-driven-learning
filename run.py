@@ -162,11 +162,24 @@ def get_experiment_environment(**args):
 
 
 def add_environments_params(parser):
+    """
+    Adds the parameters for the environment that is run
+    :param parser: parser object that parses the arguments
+
+    --env: test problems that agent should work on.
+           Documentation on - https://gym.openai.com/docs/
+    --max-episode-steps: Maximum number of steps agen can take in an environment per session
+    --env_kind: kind of environment. Kinds of environment agent can work on
+                More on - https://gym.openai.com/envs/#classic_control
+    --noop_max: Maximum number of no operation steps the agent can take in the beginning
+
+    :return: None
+    """
     parser.add_argument('--env', help='environment ID', default='BreakoutNoFrameskip-v4',
                         type=str)
-    parser.add_argument('--max-episode-steps', help='maximhttps://github.com/openai/large-scale-curiosity.gitt=4500, type=int)
-    parser.add_argument('--env_kind', type=str, default="ahttps://github.com/openai/large-scale-curiosity.git
-    parser.add_argument('--noop_max', type=int, default=30https://github.com/openai/large-scale-curiosity.git
+    parser.add_argument('--max-episode-steps', help='maximum number of timesteps for episode', default=4500, type=int)
+    parser.add_argument('--env_kind', type=str, default="atari")
+    parser.add_argument('--noop_max', type=int, default=30)
 
 
 def add_optimization_params(parser):
