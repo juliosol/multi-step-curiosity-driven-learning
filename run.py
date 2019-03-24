@@ -82,8 +82,8 @@ class Trainer(object):
             nminibatches=hps['nminibatches'],
             lr=hps['lr'],
             cliprange=0.1,
-            nsteps_per_seg=hps['nsteps_per_seg'https://github.com/openai/large-scale-curiosity.git
-            nsegs_per_env=hps['nsegs_per_env'],https://github.com/openai/large-scale-curiosity.git
+            nsteps_per_seg=hps['nsteps_per_seg'],
+            nsegs_per_env=hps['nsegs_per_env'],
             ent_coef=hps['ent_coeff'],
             normrew=hps['norm_rew'],
             normadv=hps['norm_adv'],
@@ -183,6 +183,22 @@ def add_environments_params(parser):
 
 
 def add_optimization_params(parser):
+    """
+    Adds the parameters for the optimization
+    :param parser: parser object that parses the arguments
+
+    --lambda: Constant used for calculating advantages
+    --gamma: Constant used for normalizing rewards and calculating advantages
+    --nminibatches: Number of minibatches of
+    --norm_adv: Value to tell agent if it should normalize advantages (1 for True, 0 for False)
+    --norm_rew: Value to tell agent if it should normalize rewards (1 for True, 0 for False)
+    --lr: Learning rate for the agent
+    --ent_coeff: coefficient of entropy to regularize the policy model?!
+    --nepochs: Number of epochs to run
+    --num_timesteps: Number of timesteps to run for
+
+    :return: None
+    """
     parser.add_argument('--lambda', type=float, default=0.95)
     parser.add_argument('--gamma', type=float, default=0.99)
     parser.add_argument('--nminibatches', type=int, default=8)
@@ -196,7 +212,7 @@ def add_optimization_params(parser):
 
 def add_rollout_params(parser):
     parser.add_argument('--nsteps_per_seg', type=int, default=128)
-    parser.add_argument('--nsegs_per_env', type=int, default=1https://github.com/openai/large-scale-curiosity.git
+    parser.add_argument('--nsegs_per_env', type=int, default=1)
     parser.add_argument('--envs_per_process', type=int, default=128)
     parser.add_argument('--nlumps', type=int, default=1)
 
