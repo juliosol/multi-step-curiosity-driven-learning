@@ -45,11 +45,6 @@ class Trainer(object):
         self.num_timesteps = num_timesteps
         self._set_env_vars()
 
-        self.ob_space = np.zeros((1, 512))
-        # Setting the mean and standard deviation to zero (for now)
-        self.ob_mean, self.ob_std = 0 ,0 #random_agent_ob_mean_std_alt(env, self.feature_extractor)
-
-
         self.policy = CnnPolicy(
             scope='pol',
             ob_space=np.asarray(self.ob_space),
@@ -76,6 +71,9 @@ class Trainer(object):
         self.dynamics = self.dynamics(auxiliary_task=self.feature_extractor,
                                       predict_from_pixels=hps['dyn_from_pixels'],
                                       feat_dim=512)
+
+        ''' Setting dynamics object in policy for feature extraction'''
+        self.policy.set_dynamics(self.dynamics)
 
         self.agent = PpoOptimizer(
             scope='ppo',

@@ -13,6 +13,7 @@ class CnnPolicy(object):
         self.nl = nl
         self.ob_mean = ob_mean
         self.ob_std = ob_std
+        self.dynamics = None    # Can't be passed into policy because feature extractor is created after policy
         with tf.variable_scope(scope):
             self.ob_space = ob_space
             self.ac_space = ac_space
@@ -34,7 +35,9 @@ class CnnPolicy(object):
             with tf.variable_scope(scope, reuse=False):
                 x = fc(self.flat_features, units=hidsize, activation=activ)
                 x = fc(x, units=hidsize, activation=activ)
-                pdparam = fc(x, name='pd', units=pdparamsize, activation=None)
+                ''' Changing policy to work on feature space instead of observation'''
+                features = self.dynamics.auxiliary_task.get_features(x,reuse=False)
+                pdparam = fc(features, name='pd', units=pdparamsize, activation=None)
                 vpred = fc(x, name='value_function_output', units=1, activation=None)
             pdparam = unflatten_first_dim(pdparam, sh)
             self.vpred = unflatten_first_dim(vpred, sh)[:, :, 0]
@@ -42,6 +45,9 @@ class CnnPolicy(object):
             self.a_samp = pd.sample()
             self.entropy = pd.entropy()
             self.nlp_samp = pd.neglogp(self.a_samp)
+
+    def set_dynamics(self, dynamics):
+        self.dynamics = dynamics
 
     def get_features(self, x, reuse):
         x_has_timesteps = (x.get_shape().ndims == 5)
