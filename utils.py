@@ -103,32 +103,6 @@ def random_agent_ob_mean_std(env, nsteps=10000):
     MPI.COMM_WORLD.Bcast(std, root=0)
     return mean, std
 
-def random_agent_ob_mean_std_alt(env,  feature_extractor, nsteps=5):#10000):
-    ob = tf.convert_to_tensor(np.asarray(env.reset()))
-    ob = tf.expand_dims(ob, axis=0)
-    ob = feature_extractor.get_features(ob, reuse=True)
-    if MPI.COMM_WORLD.Get_rank() == 0:
-        obs = tf.expand_dims(ob,axis=0)
-        for _ in range(nsteps):
-            ac = env.action_space.sample()
-            ob, _, done, _ = env.step(ac)
-            if done:
-                ob = env.reset()
-            ob = tf.convert_to_tensor(np.asarray(ob))
-            ob = tf.expand_dims(ob,axis=0)
-            tf.concat([obs, tf.expand_dims(feature_extractor.get_features(ob, reuse=True),axis=0)], 0)
-        # mean = np.mean(obs, 0).astype(np.float32)
-        # std = np.std(obs, 0).mean().astype(np.float32)
-        mean, var = tf.nn.moments(obs, axes=[0])
-        std = tf.sqrt(var)
-    else:
-        mean = np.empty(shape=ob.shape, dtype=np.float32)
-        std = np.empty(shape=(), dtype=np.float32)
-    MPI.COMM_WORLD.Bcast(mean.numpy(), root=0)
-    MPI.COMM_WORLD.Bcast(std.numpy(), root=0)
-    return mean, std
-
-
 def layernorm(x):
     m, v = tf.nn.moments(x, -1, keep_dims=True)
     return (x - m) / (tf.sqrt(v) + 1e-8)

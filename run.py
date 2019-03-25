@@ -13,13 +13,12 @@ from baselines import logger
 from baselines.bench import Monitor
 from baselines.common.atari_wrappers import NoopResetEnv, FrameStack
 from mpi4py import MPI
-import numpy as np
 
 from auxiliary_tasks import FeatureExtractor, InverseDynamics, VAE, JustPixels
 from cnn_policy import CnnPolicy
 from cppo_agent import PpoOptimizer
 from dynamics import Dynamics, UNet
-from utils import random_agent_ob_mean_std, getsess
+from utils import random_agent_ob_mean_std
 from wrappers import MontezumaInfoWrapper, make_mario_env, make_robo_pong, make_robo_hockey, \
     make_multi_pong, AddRandomStateToInfo, MaxAndSkipEnv, ProcessFrame84, ExtraTimeLimit
 
@@ -27,11 +26,11 @@ from wrappers import MontezumaInfoWrapper, make_mario_env, make_robo_pong, make_
 def start_experiment(**args):
     make_env = partial(make_env_all_params, add_monitor=True, args=args)
 
+    trainer = Trainer(make_env=make_env,
+                  num_timesteps=args['num_timesteps'], hps=args,
+                  envs_per_process=args['envs_per_process'])
     log, tf_sess = get_experiment_environment(**args)
     with log, tf_sess:
-        trainer = Trainer(make_env=make_env,
-                      num_timesteps=args['num_timesteps'], hps=args,
-                      envs_per_process=args['envs_per_process'])
         logdir = logger.get_dir()
         print("results will be saved to ", logdir)
         trainer.train()
@@ -47,7 +46,7 @@ class Trainer(object):
 
         self.policy = CnnPolicy(
             scope='pol',
-            ob_space=np.asarray(self.ob_space),
+            ob_space=self.ob_space,
             ac_space=self.ac_space,
             hidsize=512,
             feat_dim=512,
