@@ -66,7 +66,7 @@ class Trainer(object):
                                                         feat_dim=512,
                                                         layernormalize=hps['layernorm'])
 
-        self.ob_space = self.feature_extractor.get_features(tf.random.uniform(self.ob_space.shape), reuse=False)
+        self.ob_space = self.feature_extractor.get_features(tf.random.uniform((1,) + self.ob_space.shape), reuse=False)
 
         env = self.make_env(0, add_monitor=False)
         self.ob_mean, self.ob_std = random_agent_ob_mean_std_alt(env, self.feature_extractor)

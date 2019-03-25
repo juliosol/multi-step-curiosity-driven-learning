@@ -84,6 +84,7 @@ class Rollout(object):
 
             sli = slice(l * self.lump_stride, (l + 1) * self.lump_stride)
 
+            obs = tf.expland_dims(obs, axis=0)
             obs = self.dynamics.auxilary_task.get_features(obs, reuse=False)
             acs, vpreds, nlps = self.policy.get_ac_value_nlp(obs)
             self.env_step(l, acs)
