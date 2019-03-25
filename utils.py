@@ -103,7 +103,7 @@ def random_agent_ob_mean_std(env, nsteps=10000):
     MPI.COMM_WORLD.Bcast(std, root=0)
     return mean, std
 
-def random_agent_ob_mean_std_alt(env,  feature_extractor, nsteps=5)#10000):
+def random_agent_ob_mean_std_alt(env,  feature_extractor, nsteps=5):#10000):
     ob = tf.convert_to_tensor(np.asarray(env.reset()))
     ob = tf.expand_dims(ob, axis=0)
     ob = feature_extractor.get_features(ob, reuse=True)
