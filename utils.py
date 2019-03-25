@@ -103,7 +103,7 @@ def random_agent_ob_mean_std(env, nsteps=10000):
     MPI.COMM_WORLD.Bcast(std, root=0)
     return mean, std
 
-def random_agent_ob_mean_std(env,  feature_extractor, nsteps=10000):
+def random_agent_ob_mean_std_alt(env,  feature_extractor, nsteps=10000):
     ob = feature_extractor.get_features(np.asarray(env.reset()))
     if MPI.COMM_WORLD.Get_rank() == 0:
         obs = [ob]

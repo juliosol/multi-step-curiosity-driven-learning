@@ -19,7 +19,7 @@ from auxiliary_tasks import FeatureExtractor, InverseDynamics, VAE, JustPixels
 from cnn_policy import CnnPolicy
 from cppo_agent import PpoOptimizer
 from dynamics import Dynamics, UNet
-from utils import random_agent_ob_mean_std
+from utils import random_agent_ob_mean_std, random_agent_ob_mean_std_alt
 from wrappers import MontezumaInfoWrapper, make_mario_env, make_robo_pong, make_robo_hockey, \
     make_multi_pong, AddRandomStateToInfo, MaxAndSkipEnv, ProcessFrame84, ExtraTimeLimit
 
@@ -69,7 +69,7 @@ class Trainer(object):
         self.ob_space = self.feature_extractor.get_features(tf.random.uniform(self.ob_space.shape), reuse=False)
 
         env = self.make_env(0, add_monitor=False)
-        self.ob_mean, self.ob_std = random_agent_ob_mean_std(env, self.feature_extractor)
+        self.ob_mean, self.ob_std = random_agent_ob_mean_std_alt(env, self.feature_extractor)
 
 
         self.policy = CnnPolicy(
