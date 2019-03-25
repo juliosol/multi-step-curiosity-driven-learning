@@ -46,11 +46,14 @@ class CnnPolicy(object):
 
     def set_dynamics(self, dynamics):
         self.dynamics = dynamics
-        with tf.variable_scope(self.scope, reuse=False):
-            ''' Changing policy to work on feature space instead of observation'''
-            features = self.dynamics.auxiliary_task.get_features(x, reuse=False)
-            pdparam = fc(features, name='pd', units=self.pdparamsize, activation=None)
-            pdparam = unflatten_first_dim(pdparam, self.sh)
+        with tf.variable_scope(self.scope):
+            with tf.variable_scope(self.scope, reuse=False):
+                ''' Changing policy to work on feature space instead of observation'''
+                shaped = tf.shape(self.ph_ob)
+                flat = flatten_two_dims(self.ph_ob)
+                features = self.dynamics.auxiliary_task.get_features(flat, reuse=False)
+                pdparam = fc(features, name='pd', units=self.pdparamsize, activation=None)
+            pdparam = unflatten_first_dim(pdparam, shaped)
             self.pd = pd = self.ac_pdtype.pdfromflat(pdparam)
             self.a_samp = pd.sample()
             self.entropy = pd.entropy()
