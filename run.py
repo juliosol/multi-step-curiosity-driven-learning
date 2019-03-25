@@ -19,7 +19,7 @@ from auxiliary_tasks import FeatureExtractor, InverseDynamics, VAE, JustPixels
 from cnn_policy import CnnPolicy
 from cppo_agent import PpoOptimizer
 from dynamics import Dynamics, UNet
-from utils import random_agent_ob_mean_std, random_agent_ob_mean_std_alt
+from utils import random_agent_ob_mean_std, getsess
 from wrappers import MontezumaInfoWrapper, make_mario_env, make_robo_pong, make_robo_hockey, \
     make_multi_pong, AddRandomStateToInfo, MaxAndSkipEnv, ProcessFrame84, ExtraTimeLimit
 
@@ -65,10 +65,11 @@ class Trainer(object):
                                                         features_shared_with_policy=False,
                                                         feat_dim=512,
                                                         layernormalize=hps['layernorm'])
+        self.og_ob_space = tf.random.uniform((1,) + self.ob_space.shape)
+        self.ob_space = self.feature_extractor.get_features(self.og_ob_space, reuse=False)
+        self.ob_space = getsess().run([self.ob_space])
 
-        self.ob_space = self.feature_extractor.get_features(tf.random.uniform((1,) + self.ob_space.shape), reuse=False)
-
-        env = self.make_env(0, add_monitor=False)
+        # env = self.make_env(0, add_monitor=False)
 
         # Setting the mean and standard deviation to zero (for now)
         self.ob_mean, self.ob_std = 0 ,0 #random_agent_ob_mean_std_alt(env, self.feature_extractor)
