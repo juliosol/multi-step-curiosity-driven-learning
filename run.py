@@ -65,8 +65,11 @@ class Trainer(object):
                                                         features_shared_with_policy=False,
                                                         feat_dim=512,
                                                         layernormalize=hps['layernorm'])
+
+
         self.og_ob_space = tf.random.uniform((1,) + self.ob_space.shape)
         self.ob_space = self.feature_extractor.get_features(self.og_ob_space, reuse=False)
+        getsess().run(tf.variables_initializer(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)))
         self.ob_space = getsess().run([self.ob_space])
 
         # env = self.make_env(0, add_monitor=False)
