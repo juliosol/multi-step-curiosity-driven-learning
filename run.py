@@ -215,10 +215,10 @@ def add_rollout_params(parser):
     Adds the parameters for the rollout
     :param parser: parser object that parses the arguments
 
-    --nsteps_per_seg:
-    --nsegs_per_env:
-    --envs_per_process:
-    --nlumps:
+    --nsteps_per_seg: number of steps per segment
+    --nsegs_per_env: number of segments per environment
+    --envs_per_process: number of environments per process
+    --nlumps: number of lumps
 
     :return:
     """
