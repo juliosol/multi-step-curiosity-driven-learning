@@ -136,7 +136,7 @@ def layernorm(x):
 
 getsess = tf.get_default_session
 
-fc = partial(tf.layers.dense, kernel_initializer=normc_initializer(1.))
+#fc = partial(tf.layers.dense, kernel_initializer=normc_initializer(1.))
 activ = tf.nn.relu
 
 
@@ -161,7 +161,7 @@ def small_convnet(x, nl, feat_dim, last_nl, layernormalize, batchnorm=False):
     x = bn(tf.layers.conv2d(x, filters=64, kernel_size=4, strides=(2, 2), activation=nl))
     x = bn(tf.layers.conv2d(x, filters=64, kernel_size=3, strides=(1, 1), activation=nl))
     x = tf.reshape(x, (-1, np.prod(x.get_shape().as_list()[1:])))
-    x = bn(fc(x, units=feat_dim, activation=None))
+    x = bn(tf.layers.dense(x, units=feat_dim, activation=None, kernel_initializer=normc_initializer(1.)))
     if last_nl is not None:
         x = last_nl(x)
     if layernormalize:
