@@ -45,42 +45,14 @@ class Trainer(object):
         self.num_timesteps = num_timesteps
         self._set_env_vars()
 
-        self.policy = CnnPolicy(
-            scope='pol',
-            ob_space=self.ob_space,
-            ac_space=self.ac_space,
-            hidsize=512,
-            feat_dim=512,
-            ob_mean=self.ob_mean,
-            ob_std=self.ob_std,
-            layernormalize=False,
-            nl=tf.nn.leaky_relu)
-
-        self.feature_extractor = {"none": FeatureExtractor,
-                                  "idf": InverseDynamics,
-                                  "vaesph": partial(VAE, spherical_obs=True),
-                                  "vaenonsph": partial(VAE, spherical_obs=False),
-                                  "pix2pix": JustPixels}[hps['feat_learning']]
-        self.feature_extractor = self.feature_extractor(policy=self.policy,
-                                                        features_shared_with_policy=False,
-                                                        feat_dim=512,
-                                                        layernormalize=hps['layernorm'])
-
-
-        self.og_ob_space = tf.random.uniform((1,) + self.ob_space.shape)
-        self.ob_space = self.feature_extractor.get_features(self.og_ob_space, reuse=False)
-        getsess().run(tf.variables_initializer(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)))
-        self.ob_space = getsess().run([self.ob_space])
-
-        # env = self.make_env(0, add_monitor=False)
-
+        self.ob_space = np.zeros((1, 512))
         # Setting the mean and standard deviation to zero (for now)
         self.ob_mean, self.ob_std = 0 ,0 #random_agent_ob_mean_std_alt(env, self.feature_extractor)
 
 
         self.policy = CnnPolicy(
             scope='pol',
-            ob_space=self.ob_space,
+            ob_space=np.asarray(self.ob_space),
             ac_space=self.ac_space,
             hidsize=512,
             feat_dim=512,
