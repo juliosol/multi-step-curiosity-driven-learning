@@ -13,7 +13,13 @@ class CnnPolicy(object):
         self.nl = nl
         self.ob_mean = ob_mean
         self.ob_std = ob_std
-        self.dynamics = None    # Can't be passed into policy because feature extractor is created after policy
+
+        ''' Defining variables that'll eb initialized with dynamics '''
+        self.dynamics = None
+        self.a_samp = None
+        self.entropy = None
+        self.nlp_samp = None
+
         with tf.variable_scope(scope):
             self.ob_space = ob_space
             self.ac_space = ac_space
@@ -25,7 +31,7 @@ class CnnPolicy(object):
             self.hidsize = hidsize
             self.feat_dim = feat_dim
             self.scope = scope
-            pdparamsize = self.ac_pdtype.param_shape()[0]
+            self.pdparamsize = self.ac_pdtype.param_shape()[0]
 
             sh = tf.shape(self.ph_ob)
             x = flatten_two_dims(self.ph_ob)
@@ -35,19 +41,20 @@ class CnnPolicy(object):
             with tf.variable_scope(scope, reuse=False):
                 x = fc(self.flat_features, units=hidsize, activation=activ)
                 x = fc(x, units=hidsize, activation=activ)
-                ''' Changing policy to work on feature space instead of observation'''
-                features = self.dynamics.auxiliary_task.get_features(x,reuse=False)
-                pdparam = fc(features, name='pd', units=pdparamsize, activation=None)
                 vpred = fc(x, name='value_function_output', units=1, activation=None)
-            pdparam = unflatten_first_dim(pdparam, sh)
             self.vpred = unflatten_first_dim(vpred, sh)[:, :, 0]
+
+    def set_dynamics(self, dynamics):
+        self.dynamics = dynamics
+        with tf.variable_scope(self.scope, reuse=False):
+            ''' Changing policy to work on feature space instead of observation'''
+            features = self.dynamics.auxiliary_task.get_features(x, reuse=False)
+            pdparam = fc(features, name='pd', units=self.pdparamsize, activation=None)
+            pdparam = unflatten_first_dim(pdparam, self.sh)
             self.pd = pd = self.ac_pdtype.pdfromflat(pdparam)
             self.a_samp = pd.sample()
             self.entropy = pd.entropy()
             self.nlp_samp = pd.neglogp(self.a_samp)
-
-    def set_dynamics(self, dynamics):
-        self.dynamics = dynamics
 
     def get_features(self, x, reuse):
         x_has_timesteps = (x.get_shape().ndims == 5)
