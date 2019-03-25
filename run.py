@@ -27,11 +27,11 @@ from wrappers import MontezumaInfoWrapper, make_mario_env, make_robo_pong, make_
 def start_experiment(**args):
     make_env = partial(make_env_all_params, add_monitor=True, args=args)
 
-    trainer = Trainer(make_env=make_env,
-                      num_timesteps=args['num_timesteps'], hps=args,
-                      envs_per_process=args['envs_per_process'])
     log, tf_sess = get_experiment_environment(**args)
     with log, tf_sess:
+        trainer = Trainer(make_env=make_env,
+                      num_timesteps=args['num_timesteps'], hps=args,
+                      envs_per_process=args['envs_per_process'])
         logdir = logger.get_dir()
         print("results will be saved to ", logdir)
         trainer.train()
