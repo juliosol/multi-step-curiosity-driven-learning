@@ -85,4 +85,4 @@ class CnnPolicy(object):
         a, vpred, nlp, vpred2 = \
             getsess().run([self.a_samp, self.vpred, self.nlp_samp, self.vpred2],
                           feed_dict={self.ph_ob: ob[:, None]})
-        return a[:, 0], vpred[:, 0], nlp[:, 0]
+        return a[:, 0], vpred[:, 0], nlp[:, 0], vpred2[:, 0]
