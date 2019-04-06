@@ -52,7 +52,10 @@ class CnnPolicy(object):
                 shaped = tf.shape(self.ph_ob)
                 flat = flatten_two_dims(self.ph_ob)
                 features = self.dynamics.auxiliary_task.get_features(flat, reuse=False)
-                pdparam = fc(features, name='pd', units=self.pdparamsize, activation=None)
+                # Adding two more FC layers to more align with original architecture
+                x = fc(features, units=self.hidsize, activation=activ)
+                x = fc(x, units=self.hidsize, activation=activ)
+                pdparam = fc(x, name='pd', units=self.pdparamsize, activation=None)
             pdparam = unflatten_first_dim(pdparam, shaped)
             self.pd = pd = self.ac_pdtype.pdfromflat(pdparam)
             self.a_samp = pd.sample()
