@@ -42,7 +42,12 @@ class CnnPolicy(object):
                 x = fc(self.flat_features, units=hidsize, activation=activ)
                 x = fc(x, units=hidsize, activation=activ)
                 vpred = fc(x, name='value_function_output', units=1, activation=None)
+                y = fc(vpred,  units=hidsize, activation=activ)
+                y = fc(y, units=hidsize, activation=activ)
+            with tf.variable_scope(scope, reuse=True):
+                vpred2 = fc(y, name='value_function_output', units=1, activation=None)
             self.vpred = unflatten_first_dim(vpred, sh)[:, :, 0]
+            self.vpred2 = unflatten_first_dim(vpred2, sh)[:, :, 0]
 
     def set_dynamics(self, dynamics):
         self.dynamics = dynamics
@@ -77,7 +82,7 @@ class CnnPolicy(object):
         return x
 
     def get_ac_value_nlp(self, ob):
-        a, vpred, nlp = \
-            getsess().run([self.a_samp, self.vpred, self.nlp_samp],
+        a, vpred, nlp, vpred2 = \
+            getsess().run([self.a_samp, self.vpred, self.nlp_samp, self.vpred2],
                           feed_dict={self.ph_ob: ob[:, None]})
         return a[:, 0], vpred[:, 0], nlp[:, 0]
