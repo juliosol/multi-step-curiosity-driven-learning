@@ -64,8 +64,6 @@ class Trainer(object):
                                                         features_shared_with_policy=False,
                                                         feat_dim=512,
                                                         layernormalize=hps['layernorm'])
-        # TODO: output = self.feature_extractor.get_features(tf.random(self.ob_space.shape, reuse=False)
-        # Todo: remake policy and feature extractor
         self.dynamics = Dynamics if hps['feat_learning'] != 'pix2pix' else UNet
         self.dynamics = self.dynamics(auxiliary_task=self.feature_extractor,
                                       predict_from_pixels=hps['dyn_from_pixels'],
@@ -179,7 +177,7 @@ def add_optimization_params(parser):
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--ent_coeff', type=float, default=0.001)
     parser.add_argument('--nepochs', type=int, default=3)
-    parser.add_argument('--num_timesteps', type=int, default=int(1e8))
+    parser.add_argument('--num_timesteps', type=int, default=int(1e6))
 
 
 def add_rollout_params(parser):

@@ -24,6 +24,7 @@ class Rollout(object):
         self.reward_fun = lambda ext_rew, int_rew: ext_rew_coeff * np.clip(ext_rew, -1., 1.) + int_rew_coeff * int_rew
 
         self.buf_vpreds = np.empty((nenvs, self.nsteps), np.float32)
+        self.buf_vpreds2 = np.empty((nenvs, self.nsteps), np.float32)
         self.buf_nlps = np.empty((nenvs, self.nsteps), np.float32)
         self.buf_rews = np.empty((nenvs, self.nsteps), np.float32)
         self.buf_ext_rews = np.empty((nenvs, self.nsteps), np.float32)
@@ -84,9 +85,7 @@ class Rollout(object):
 
             sli = slice(l * self.lump_stride, (l + 1) * self.lump_stride)
 
-            # TODO get features for obs
-            # TODO predict = self.dynamics.auxilary_task.get_features()
-            acs, vpreds, nlps = self.policy.get_ac_value_nlp(obs)
+            acs, vpreds, nlps, vpreds2 = self.policy.get_ac_value_nlp(obs)
             self.env_step(l, acs)
 
             # self.prev_feat[l] = dyn_feat
@@ -94,6 +93,7 @@ class Rollout(object):
             self.buf_obs[sli, t] = obs
             self.buf_news[sli, t] = news
             self.buf_vpreds[sli, t] = vpreds
+            self.buf_vpreds2[sli, t] = vpreds2
             self.buf_nlps[sli, t] = nlps
             self.buf_acs[sli, t] = acs
             if t > 0:
