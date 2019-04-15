@@ -14,11 +14,12 @@ class CnnPolicy(object):
         self.ob_mean = ob_mean
         self.ob_std = ob_std
 
-        ''' Defining variables that'll eb initialized with dynamics '''
+        ''' Defining variables that'll be initialized with dynamics '''
         self.dynamics = None
         self.a_samp = None
         self.entropy = None
         self.nlp_samp = None
+        self.features_alt = None
 
         with tf.variable_scope(scope):
             self.ob_space = ob_space
@@ -56,9 +57,10 @@ class CnnPolicy(object):
                 ''' Changing policy to work on feature space instead of observation'''
                 shaped = tf.shape(self.ph_ob)
                 flat = flatten_two_dims(self.ph_ob)
-                features = self.dynamics.auxiliary_task.get_features(flat, reuse=False)
+                self.features_alt = self.dynamics.auxiliary_task.get_features(flat, reuse=False)
+
                 # Adding two more FC layers to more align with original architecture
-                x = fc(features, units=self.hidsize, activation=activ)
+                x = fc(self.features_alt, units=self.hidsize, activation=activ)
                 x = fc(x, units=self.hidsize, activation=activ)
                 pdparam = fc(x, name='pd', units=self.pdparamsize, activation=None)
             pdparam = unflatten_first_dim(pdparam, shaped)

@@ -17,6 +17,9 @@ class Dynamics(object):
         self.ac_space = self.auxiliary_task.ac_space
         self.ob_mean = self.auxiliary_task.ob_mean
         self.ob_std = self.auxiliary_task.ob_std
+
+        self.first_pred = None #Placeholder to save first prediction from FD
+
         if predict_from_pixels:
             self.features = self.get_features(self.obs, reuse=False)
         else:
@@ -25,7 +28,8 @@ class Dynamics(object):
         self.out_features = self.auxiliary_task.next_features
 
         with tf.variable_scope(self.scope + "_loss"):
-            self.loss = self.get_loss()
+            self.loss1 = self.get_loss()
+            self.loss2 = self.get_loss_t2()
 
     def get_features(self, x, reuse):
         nl = tf.nn.leaky_relu
@@ -62,7 +66,33 @@ class Dynamics(object):
             n_out_features = self.out_features.get_shape()[-1].value
             x = tf.layers.dense(add_ac(x), n_out_features, activation=None)
             x = unflatten_first_dim(x, sh)
+            self.first_pred.append(x)
         return tf.reduce_mean((x - tf.stop_gradient(self.out_features)) ** 2, -1)
+
+    def get_loss_t2(self):
+        ac = self.auxiliary_task.policy.a_samp
+        sh = tf.shape(ac)
+        ac = flatten_two_dims(ac)
+
+        def add_ac(x):
+            return tf.concat([x, ac], axis=-1)
+
+        with tf.variable_scope(self.scope):
+            x = flatten_two_dims(self.first_pred)
+            x = tf.layers.dense(add_ac(x), self.hidsize, activation=tf.nn.leaky_relu)
+
+            def residual(x):
+                res = tf.layers.dense(add_ac(x), self.hidsize, activation=tf.nn.leaky_relu)
+                res = tf.layers.dense(add_ac(res), self.hidsize, activation=None)
+                return x + res
+
+            for _ in range(4):
+                x = residual(x)
+            n_out_features = self.out_features.get_shape()[-1].value
+            x = tf.layers.dense(add_ac(x), n_out_features, activation=None)
+            x = unflatten_first_dim(x, sh)
+        return tf.reduce_mean((x - tf.stop_gradient(self.out_features)) ** 2, -1)
+
 
     def calculate_loss(self, ob, last_ob, acs):
         n_chunks = 8
@@ -70,9 +100,14 @@ class Dynamics(object):
         chunk_size = n // n_chunks
         assert n % n_chunks == 0
         sli = lambda i: slice(i * chunk_size, (i + 1) * chunk_size)
-        return np.concatenate([getsess().run(self.loss,
-                                             {self.obs: ob[sli(i)], self.last_ob: last_ob[sli(i)],
-                                              self.ac: acs[sli(i)]}) for i in range(n_chunks)], 0)
+        self.first_pred = []
+        loss1 = [getsess().run(self.loss1,
+                               {self.obs: ob[sli(i)], self.last_ob: last_ob[sli(i)],
+                               self.ac: acs[sli(i)]}) for i in range(n_chunks)]
+        loss2 = [getsess().run(self.loss2,
+                               {self.last_ob: last_ob[sli(i)],
+                                 self.auxiliary_task.policy.features_alt: self.first_pred[i]}) for i in range(1, n_chunks)]
+        return np.concatenate(loss1 + loss2, 0)
 
 
 class UNet(Dynamics):
