@@ -73,6 +73,7 @@ class Trainer(object):
 
         ''' Setting dynamics object in policy for feature extraction'''
         self.policy.set_dynamics(self.dynamics)
+        self.dynamics.set_loss()
 
         self.agent = PpoOptimizer(
             scope='ppo',

@@ -29,7 +29,8 @@ class Dynamics(object):
 
         with tf.variable_scope(self.scope + "_loss"):
             self.loss1 = self.get_loss()
-            self.loss2 = self.get_loss_t2()
+            self.loss2 = None
+
 
     def get_features(self, x, reuse):
         nl = tf.nn.leaky_relu
@@ -43,6 +44,10 @@ class Dynamics(object):
         if x_has_timesteps:
             x = unflatten_first_dim(x, sh)
         return x
+
+    def set_loss(self):
+        with tf.variable_scope(self.scope + "_loss"):
+            self.loss2 = self.get_loss_t2()
 
     def get_loss(self):
         ac = tf.one_hot(self.ac, self.ac_space.n, axis=2)
