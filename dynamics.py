@@ -18,7 +18,7 @@ class Dynamics(object):
         self.ob_mean = self.auxiliary_task.ob_mean
         self.ob_std = self.auxiliary_task.ob_std
 
-        self.first_pred = None #Placeholder to save first prediction from FD
+        self.first_pred = [] #Placeholder to save first prediction from FD
 
         if predict_from_pixels:
             self.features = self.get_features(self.obs, reuse=False)
