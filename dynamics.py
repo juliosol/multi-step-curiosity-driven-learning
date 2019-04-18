@@ -28,7 +28,7 @@ class Dynamics(object):
         self.out_features = self.auxiliary_task.next_features
 
         with tf.variable_scope(self.scope + "_loss"):
-            self.loss1 = self.get_loss()
+            self.loss1 = self.get_loss_t1()
             self.loss2 = None
 
     def get_features(self, x, reuse):
@@ -48,8 +48,7 @@ class Dynamics(object):
         with tf.variable_scope(self.scope + "_loss"):
             self.loss2 = self.get_loss_t2()
 
-    def get_loss(self):
-        ac = tf.one_hot(self.ac, self.ac_space.n, axis=2)
+    def get_loss(self, ac):
         sh = tf.shape(ac)
         ac = flatten_two_dims(ac)
 
@@ -58,7 +57,7 @@ class Dynamics(object):
 
         with tf.variable_scope(self.scope):
             x = flatten_two_dims(self.features)
-            x = tf.layers.dense(add_ac(x), self.hidsize, activation=tf.nn.leaky_relu)
+            x = tf.layers.dense(add_ac(x), self.hidsize, activation=tf.nn.leaky_relu, reuse=tf.AUTO_REUSE)
 
             def residual(x):
                 res = tf.layers.dense(add_ac(x), self.hidsize, activation=tf.nn.leaky_relu)
@@ -70,32 +69,18 @@ class Dynamics(object):
             n_out_features = self.out_features.get_shape()[-1].value
             x = tf.layers.dense(add_ac(x), n_out_features, activation=None)
             x = unflatten_first_dim(x, sh)
-            self.first_pred.append(x)
-        return tf.reduce_mean((x - tf.stop_gradient(self.out_features)) ** 2, -1)
+            return x
+
+    def get_loss_t1(self):
+        ac = tf.one_hot(self.ac, self.ac_space.n, axis=2)
+        result = self.get_loss(ac)
+        self.first_pred.append(result)
+        return tf.reduce_mean((result - tf.stop_gradient(self.out_features)) ** 2, -1)
 
     def get_loss_t2(self):
         ac = tf.one_hot(self.auxiliary_task.policy.a_samp, self.ac_space.n, axis=2)
-        sh = tf.shape(ac)
-        ac = flatten_two_dims(ac)
-
-        def add_ac(x):
-            return tf.concat([x, ac], axis=-1)
-
-        with tf.variable_scope(self.scope):
-            x = flatten_two_dims(self.features)
-            x = tf.layers.dense(add_ac(x), self.hidsize, activation=tf.nn.leaky_relu)
-
-            def residual(x):
-                res = tf.layers.dense(add_ac(x), self.hidsize, activation=tf.nn.leaky_relu)
-                res = tf.layers.dense(add_ac(res), self.hidsize, activation=None)
-                return x + res
-
-            for _ in range(4):
-                x = residual(x)
-            n_out_features = self.out_features.get_shape()[-1].value
-            x = tf.layers.dense(add_ac(x), n_out_features, activation=None)
-            x = unflatten_first_dim(x, sh)
-        return tf.reduce_mean((x - tf.stop_gradient(self.out_features)) ** 2, -1)
+        result = self.get_loss(ac)
+        return tf.reduce_mean((result - tf.stop_gradient(self.out_features)) ** 2, -1)
 
 
     def calculate_loss(self, ob, last_ob, acs):
