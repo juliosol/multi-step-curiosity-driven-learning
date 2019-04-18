@@ -18,8 +18,6 @@ class Dynamics(object):
         self.ob_mean = self.auxiliary_task.ob_mean
         self.ob_std = self.auxiliary_task.ob_std
 
-        self.first_pred = [] #Placeholder to save first prediction from FD
-
         if predict_from_pixels:
             self.features = self.get_features(self.obs, reuse=False)
         else:
@@ -30,6 +28,8 @@ class Dynamics(object):
         with tf.variable_scope(self.scope + "_loss"):
             self.loss1 = self.get_loss()
             self.loss2 = None
+        self.first_pred = [] #Placeholder to save first prediction from FD
+        self.prev_pred = self.features
 
 
     def get_features(self, x, reuse):
@@ -75,7 +75,7 @@ class Dynamics(object):
         return tf.reduce_mean((x - tf.stop_gradient(self.out_features)) ** 2, -1)
 
     def get_loss_t2(self):
-        ac = self.auxiliary_task.policy.a_samp
+        ac = tf.one_hot(self.auxiliary_task.policy.a_samp, self.ac_space.n, axis=2)
         sh = tf.shape(ac)
         ac = flatten_two_dims(ac)
 
@@ -83,7 +83,7 @@ class Dynamics(object):
             return tf.concat([x, ac], axis=-1)
 
         with tf.variable_scope(self.scope):
-            x = flatten_two_dims(self.first_pred)
+            x = flatten_two_dims(self.prev_pred)
             x = tf.layers.dense(add_ac(x), self.hidsize, activation=tf.nn.leaky_relu)
 
             def residual(x):
@@ -110,7 +110,7 @@ class Dynamics(object):
                                {self.obs: ob[sli(i)], self.last_ob: last_ob[sli(i)],
                                self.ac: acs[sli(i)]}) for i in range(n_chunks)]
         loss2 = [getsess().run(self.loss2,
-                               {self.last_ob: last_ob[sli(i)],
+                               {self.last_ob: last_ob[sli(i)], self.prev_pred: self.first_pred[i],
                                  self.auxiliary_task.policy.features_alt: self.first_pred[i]}) for i in range(1, n_chunks)]
         return np.concatenate(loss1 + loss2, 0)
 

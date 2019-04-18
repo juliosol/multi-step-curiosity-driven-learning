@@ -57,7 +57,7 @@ class CnnPolicy(object):
                 ''' Changing policy to work on feature space instead of observation'''
                 shaped = tf.shape(self.ph_ob)
                 flat = flatten_two_dims(self.ph_ob)
-                self.features_alt = self.dynamics.auxiliary_task.get_features(flat, reuse=False)
+                self.features_alt = self.dynamics.auxiliary_task.get_features(flat)
 
                 # Adding two more FC layers to more align with original architecture
                 x = fc(self.features_alt, units=self.hidsize, activation=activ)
