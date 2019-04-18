@@ -18,7 +18,7 @@ class Dynamics(object):
         self.ob_mean = self.auxiliary_task.ob_mean
         self.ob_std = self.auxiliary_task.ob_std
 
-        self.first_pred = [] #Placeholder to save first prediction from FD
+        self.first_pred = None
 
         if predict_from_pixels:
             self.features = self.get_features(self.obs, reuse=False)
@@ -60,8 +60,8 @@ class Dynamics(object):
             x = tf.layers.dense(add_ac(x), self.hidsize, activation=tf.nn.leaky_relu, reuse=tf.AUTO_REUSE)
 
             def residual(x):
-                res = tf.layers.dense(add_ac(x), self.hidsize, activation=tf.nn.leaky_relu)
-                res = tf.layers.dense(add_ac(res), self.hidsize, activation=None)
+                res = tf.layers.dense(add_ac(x), self.hidsize, activation=tf.nn.leaky_relu, reuse=tf.AUTO_REUSE)
+                res = tf.layers.dense(add_ac(res), self.hidsize, activation=None, reuse=tf.AUTO_REUSE)
                 return x + res
 
             for _ in range(4):
@@ -73,9 +73,8 @@ class Dynamics(object):
 
     def get_loss_t1(self):
         ac = tf.one_hot(self.ac, self.ac_space.n, axis=2)
-        result = self.get_loss(ac)
-        self.first_pred.append(result)
-        return tf.reduce_mean((result - tf.stop_gradient(self.out_features)) ** 2, -1)
+        self.first_pred = self.get_loss(ac)
+        return tf.reduce_mean((self.first_pred - tf.stop_gradient(self.out_features)) ** 2, -1)
 
     def get_loss_t2(self):
         ac = tf.one_hot(self.auxiliary_task.policy.a_samp, self.ac_space.n, axis=2)
@@ -89,14 +88,14 @@ class Dynamics(object):
         chunk_size = n // n_chunks
         assert n % n_chunks == 0
         sli = lambda i: slice(i * chunk_size, (i + 1) * chunk_size)
-        self.first_pred = []
-        loss1 = [getsess().run(self.loss1,
+        loss1 = [getsess().run(self.loss1, self.first_pred,
                                {self.obs: ob[sli(i)], self.last_ob: last_ob[sli(i)],
                                self.ac: acs[sli(i)]}) for i in range(n_chunks)]
         loss2 = [getsess().run(self.loss2,
-                               {self.last_ob: last_ob[sli(i)], self.features: self.first_pred[i],
-                                 self.auxiliary_task.policy.features_alt: self.first_pred[i]}) for i in range(1, n_chunks)]
-        return np.concatenate(loss1 + loss2, 0)
+                               {self.last_ob: last_ob[sli(i)], self.features: loss1[i-1][1],
+                                 self.auxiliary_task.policy.features_alt: loss1[i-1][1]}) for i in range(1, n_chunks)]
+        loss_final = [loss1[i][0] + loss2[i] for i in range(n_chunks)]
+        return np.concatenate(loss_final, 0)
 
 
 class UNet(Dynamics):
