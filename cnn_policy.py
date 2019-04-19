@@ -19,7 +19,7 @@ class CnnPolicy(object):
         self.a_samp = None
         self.entropy = None
         self.nlp_samp = None
-        self.features_alt = None
+        self.extracted_features_alt = None
 
         with tf.variable_scope(scope):
             self.ob_space = ob_space
@@ -39,6 +39,9 @@ class CnnPolicy(object):
             self.flat_features = self.get_features(x, reuse=False)
             self.features = unflatten_first_dim(self.flat_features, sh)
 
+            self.extracted_features = tf.placeholder(dtype=tf.int32,
+                                                     shape=self.features.shape)
+
             with tf.variable_scope(scope, reuse=False):
                 x = fc(self.flat_features, units=hidsize, activation=activ)
                 x = fc(x, units=hidsize, activation=activ)
@@ -54,10 +57,10 @@ class CnnPolicy(object):
                 ''' Changing policy to work on feature space instead of observation'''
                 shaped = tf.shape(self.ph_ob)
                 flat = flatten_two_dims(self.ph_ob)
-                self.features_alt = self.dynamics.auxiliary_task.get_features(flat, reuse=tf.AUTO_REUSE)
+                self.extracted_features_alt = self.dynamics.auxiliary_task.get_features(flat, reuse=tf.AUTO_REUSE)
 
                 # Adding two more FC layers to more align with original architecture
-                x = fc(self.features_alt, units=self.hidsize, activation=activ, reuse=True)
+                x = fc(self.extracted_features, units=self.hidsize, activation=activ, reuse=True)
                 x = fc(x, units=self.hidsize, activation=activ, reuse=True)
                 pdparam = fc(x, name='pd', units=self.pdparamsize, activation=None)
             pdparam = unflatten_first_dim(pdparam, shaped)
@@ -81,7 +84,8 @@ class CnnPolicy(object):
         return x
 
     def get_ac_value_nlp(self, ob):
+        features = getsess().run(self.extracted_features_alt, feed_dict={self.ph_ob: ob[:, None]})
         a, vpred, nlp = \
             getsess().run([self.a_samp, self.vpred, self.nlp_samp],
-                          feed_dict={self.ph_ob: ob[:, None]})
+                          feed_dict={self.ph_ob: ob[:, None], self.extracted_features:features})
         return a[:, 0], vpred[:, 0], nlp[:, 0]

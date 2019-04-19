@@ -12,6 +12,7 @@ class Dynamics(object):
         self.hidsize = self.auxiliary_task.hidsize
         self.feat_dim = feat_dim
         self.obs = self.auxiliary_task.obs
+        self.extracted_features = self.auxiliary_task.extracted_features
         self.last_ob = self.auxiliary_task.last_ob
         self.ac = self.auxiliary_task.ac
         self.ac_space = self.auxiliary_task.ac_space
@@ -67,7 +68,7 @@ class Dynamics(object):
             for _ in range(4):
                 x = residual(x)
             n_out_features = self.out_features.get_shape()[-1].value
-            x = tf.layers.dense(add_ac(x), n_out_features, activation=None)
+            x = tf.layers.dense(add_ac(x), n_out_features, activation=None, reuse=tf.AUTO_REUSE)
             x = unflatten_first_dim(x, sh)
             return x
 
@@ -88,12 +89,12 @@ class Dynamics(object):
         chunk_size = n // n_chunks
         assert n % n_chunks == 0
         sli = lambda i: slice(i * chunk_size, (i + 1) * chunk_size)
-        loss1 = [getsess().run(self.loss1, self.first_pred,
+        loss1 = [getsess().run([self.loss1, self.first_pred],
                                {self.obs: ob[sli(i)], self.last_ob: last_ob[sli(i)],
                                self.ac: acs[sli(i)]}) for i in range(n_chunks)]
         loss2 = [getsess().run(self.loss2,
-                               {self.last_ob: last_ob[sli(i)], self.features: loss1[i-1][1],
-                                 self.auxiliary_task.policy.features_alt: loss1[i-1][1]}) for i in range(1, n_chunks)]
+                               {self.obs: ob[sli(i)], self.last_ob: last_ob[sli(i)], self.features: loss1[i-1][1],
+                                 self.extracted_features: loss1[i-1][1]}) for i in range(1, n_chunks)]
         loss_final = [loss1[i][0] + loss2[i] for i in range(n_chunks)]
         return np.concatenate(loss_final, 0)
 

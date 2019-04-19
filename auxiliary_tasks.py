@@ -15,6 +15,7 @@ class FeatureExtractor(object):
         self.ob_space = policy.ob_space
         self.ac_space = policy.ac_space
         self.obs = self.policy.ph_ob
+        self.extracted_features = self.policy.extracted_features
         self.ob_mean = self.policy.ob_mean
         self.ob_std = self.policy.ob_std
         with tf.variable_scope(scope):
