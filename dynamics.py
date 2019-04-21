@@ -80,7 +80,7 @@ class Dynamics(object):
         return tf.reduce_mean((self.first_pred - tf.stop_gradient(self.out_features)) ** 2, -1)
 
     def get_loss_t2(self):
-        ac = tf.one_hot(self.auxiliary_task.policy.a_samp, self.ac_space.n, axis=2)
+        ac = tf.one_hot(self.auxiliary_task.policy.a_samp_alt, self.ac_space.n, axis=2)
         result = self.get_loss(ac)
         return tf.reduce_mean((result - tf.stop_gradient(self.out_features)) ** 2, -1)
 

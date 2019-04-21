@@ -19,7 +19,7 @@ class CnnPolicy(object):
         self.a_samp = None
         self.entropy = None
         self.nlp_samp = None
-        self.extracted_features_alt = None
+        self.a_samp_alt = None
 
         with tf.variable_scope(scope):
             self.ob_space = ob_space
@@ -53,21 +53,26 @@ class CnnPolicy(object):
     def set_dynamics(self, dynamics):
         self.dynamics = dynamics
         with tf.variable_scope(self.scope):
-            with tf.variable_scope(self.scope, reuse=False):
-                ''' Changing policy to work on feature space instead of observation'''
-                shaped = tf.shape(self.ph_ob)
-                flat = flatten_two_dims(self.ph_ob)
-                self.extracted_features_alt = self.dynamics.auxiliary_task.get_features(flat, reuse=tf.AUTO_REUSE)
-
-                # Adding two more FC layers to more align with original architecture
-                x = fc(self.extracted_features, units=self.hidsize, activation=activ, reuse=True)
-                x = fc(x, units=self.hidsize, activation=activ, reuse=True)
-                pdparam = fc(x, name='pd', units=self.pdparamsize, activation=None)
+            shaped = tf.shape(self.ph_ob)
+            flat = flatten_two_dims(self.ph_ob)
+            pdparam = self.get_pdparam(flat)
             pdparam = unflatten_first_dim(pdparam, shaped)
             self.pd = pd = self.ac_pdtype.pdfromflat(pdparam)
             self.a_samp = pd.sample()
             self.entropy = pd.entropy()
             self.nlp_samp = pd.neglogp(self.a_samp)
+
+            '''Alternate ac for forward dynamics'''
+            pdparam_alt = self.get_pdparam(self.extracted_features)
+            pdparam_alt = unflatten_first_dim(pdparam_alt, shaped)
+            self.a_samp_alt = self.ac_pdtype.pdfromflat(pdparam_alt).sample()
+
+    def get_pdparam(self, features):
+        with tf.variable_scope(self.scope, reuse=False):
+            x = fc(features, units=self.hidsize, activation=activ, reuse=True)
+            x = fc(x, units=self.hidsize, activation=activ, reuse=True)
+            pdparam = fc(x, name='pd', units=self.pdparamsize, activation=None)
+        return pdparam
 
     def get_features(self, x, reuse):
         x_has_timesteps = (x.get_shape().ndims == 5)
@@ -84,8 +89,7 @@ class CnnPolicy(object):
         return x
 
     def get_ac_value_nlp(self, ob):
-        features = getsess().run(self.extracted_features_alt, feed_dict={self.ph_ob: ob[:, None]})
         a, vpred, nlp = \
             getsess().run([self.a_samp, self.vpred, self.nlp_samp],
-                          feed_dict={self.ph_ob: ob[:, None], self.extracted_features:features})
+                          feed_dict={self.ph_ob: ob[:, None]})
         return a[:, 0], vpred[:, 0], nlp[:, 0]
