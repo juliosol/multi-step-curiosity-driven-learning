@@ -39,8 +39,8 @@ class CnnPolicy(object):
             self.flat_features = self.get_features(x, reuse=False)
             self.features = unflatten_first_dim(self.flat_features, sh)
 
-            self.extracted_features = tf.placeholder(dtype=tf.int32,
-                                                     shape=self.features.shape)
+            self.extracted_features = tf.placeholder(dtype=tf.float32,
+                                                     shape=self.flat_features.shape)
 
             with tf.variable_scope(scope, reuse=False):
                 x = fc(self.flat_features, units=hidsize, activation=activ)

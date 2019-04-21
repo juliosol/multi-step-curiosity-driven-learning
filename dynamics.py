@@ -20,6 +20,7 @@ class Dynamics(object):
         self.ob_std = self.auxiliary_task.ob_std
 
         self.first_pred = None
+        self.first_pred_flat = None
 
         if predict_from_pixels:
             self.features = self.get_features(self.obs, reuse=False)
@@ -75,6 +76,7 @@ class Dynamics(object):
     def get_loss_t1(self):
         ac = tf.one_hot(self.ac, self.ac_space.n, axis=2)
         self.first_pred = self.get_loss(ac)
+        self.first_pred_flat = flatten_two_dims(self.first_pred)
         return tf.reduce_mean((self.first_pred - tf.stop_gradient(self.out_features)) ** 2, -1)
 
     def get_loss_t2(self):
@@ -89,12 +91,14 @@ class Dynamics(object):
         chunk_size = n // n_chunks
         assert n % n_chunks == 0
         sli = lambda i: slice(i * chunk_size, (i + 1) * chunk_size)
-        loss1 = [getsess().run([self.loss1, self.first_pred],
+        loss1 = [getsess().run([self.loss1, self.first_pred, self.first_pred_flat],
                                {self.obs: ob[sli(i)], self.last_ob: last_ob[sli(i)],
                                self.ac: acs[sli(i)]}) for i in range(n_chunks)]
         loss2 = [getsess().run(self.loss2,
                                {self.obs: ob[sli(i)], self.last_ob: last_ob[sli(i)], self.features: loss1[i-1][1],
-                                 self.extracted_features: loss1[i-1][1]}) for i in range(1, n_chunks)]
+                                 self.extracted_features: loss1[i-1][2]}) for i in range(1, n_chunks)]
+        avg_loss2 = np.sum(loss2, axis=0)/len(loss2)
+        loss2.append(avg_loss2)
         loss_final = [loss1[i][0] + loss2[i] for i in range(n_chunks)]
         return np.concatenate(loss_final, 0)
 
