@@ -111,21 +111,24 @@ class Rollout(object):
                     self.buf_new_last[sli] = nextnews
                     self.buf_ext_rews[sli, t] = ext_rews
                     _, self.buf_vpred_last[sli], _ = self.policy.get_ac_value_nlp(nextobs)
+
     def update_info(self):
         all_ep_infos = MPI.COMM_WORLD.allgather(self.ep_infos_new)
         all_ep_infos = sorted(sum(all_ep_infos, []), key=lambda x: x[0])
+        
         if all_ep_infos:
             all_ep_infos = [i_[1] for i_ in all_ep_infos]  # remove the step_count
             keys_ = all_ep_infos[0].keys()
             all_ep_infos = {k: [i[k] for i in all_ep_infos] for k in keys_}
-
-            self.statlists['eprew'].extend(all_ep_infos['r'])
-            self.stats['eprew_recent'] = np.mean(all_ep_infos['r'])
-            self.statlists['eplen'].extend(all_ep_infos['l'])
-            self.stats['epcount'] += len(all_ep_infos['l'])
-            self.stats['tcount'] += sum(all_ep_infos['l'])
+            
+            #self.statlists['eprew'].extend(all_ep_infos['r'])
+            #self.stats['eprew_recent'] = np.mean(all_ep_infos['r'])
+            #self.statlists['eplen'].extend(all_ep_infos['l'])
+            #self.stats['epcount'] += len(all_ep_infos['l'])
+            #self.stats['tcount'] += sum(all_ep_infos['l'])
+            
             if 'visited_rooms' in keys_:
-                # Montezuma specific logging.
+            # Montezuma specific logging.
                 self.stats['visited_rooms'] = sorted(list(set.union(*all_ep_infos['visited_rooms'])))
                 self.stats['pos_count'] = np.mean(all_ep_infos['pos_count'])
                 self.all_visited_rooms.extend(self.stats['visited_rooms'])
@@ -146,7 +149,7 @@ class Rollout(object):
                     print("All visited levels")
                     print(self.all_visited_rooms)
 
-            current_max = np.max(all_ep_infos['r'])
+            current_max = np.max(all_ep_infos['levels'][0])
         else:
             current_max = None
         self.ep_infos_new = []

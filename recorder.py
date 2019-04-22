@@ -33,10 +33,10 @@ class Recorder(object):
                 self.int_rews[in_index].append(int_rew[out_index])
                 self.ext_rews[in_index].append(ext_rew[out_index])
 
-                if news[out_index]:
-                    self.ep_infos[in_index]['ret'] = infos[out_index]['episode']['r']
-                    self.ep_infos[in_index]['len'] = infos[out_index]['episode']['l']
-                    self.dump_episode(in_index)
+                #if news[out_index]:
+                #    self.ep_infos[in_index]['ret'] = infos[out_index]['episode']['r']
+                #    self.ep_infos[in_index]['len'] = infos[out_index]['episode']['l']
+                #    self.dump_episode(in_index)
 
                 self.acs[in_index].append(acs[out_index])
 
