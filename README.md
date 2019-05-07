@@ -1,6 +1,9 @@
 **Status:** Archive (code is provided as-is, no updates expected)
 
 ## Large-Scale Study of Curiosity-Driven Learning ##
+
+### The results from the modified code for the EECS 598 project at UM can be seen at https://aggarwalruchir.github.io/result_videos.html ### 
+
 #### [[Project Website]](https://pathak22.github.io/large-scale-curiosity/) [[Demo Video]](https://youtu.be/l1FqtAHfJLI)
 
 [Yuri Burda*](https://sites.google.com/site/yburda/), [Harri Edwards*](https://github.com/harri-edwards/), [Deepak Pathak*](https://people.eecs.berkeley.edu/~pathak/), <br/>[Amos Storkey](http://homepages.inf.ed.ac.uk/amos/), [Trevor Darrell](https://people.eecs.berkeley.edu/~trevor/), [Alexei A. Efros](https://people.eecs.berkeley.edu/~efros/)<br/>
